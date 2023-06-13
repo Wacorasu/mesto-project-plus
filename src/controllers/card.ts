@@ -81,7 +81,7 @@ export const dislikeCard = (
   const _id = req.params.cardId;
   Card.findByIdAndUpdate(
     _id,
-    { $pull: { likes: req.user?._id } },
+    { $pull: { likes: new ObjectId(_id) } },
     { new: true, runValidators: true }
   )
     .populate(['owner', "likes"])
