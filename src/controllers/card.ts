@@ -1,15 +1,15 @@
 import { NextFunction, Response } from 'express';
 import { CustomRequest } from '../services/types';
 import Card from '../models/card';
-import { NotFoundError, DataError } from '../services/utils';
-import {  ObjectId } from 'mongodb';
-import mongoose from 'mongoose';
+import NotFoundError from '../services/utils';
+import { SERVER_CODE_CREATE_OK } from '../services/constants';
 
 export const getCards = (
   req: CustomRequest,
   res: Response,
   next: NextFunction,
 ) => Card.find({})
+  .populate(['owner', 'likes'])
   .then((card) => res.send(card))
   .catch(next);
 
@@ -19,19 +19,19 @@ export const createCard = (
   next: NextFunction,
 ) => {
   const { name, link } = req.body;
-  const date = new Date();
-  const likes: string[] = [];
-  let owner;
-  if (req.user) {
-    owner = req.user._id;
-  }
-  if (!name || !link) {
-    throw new DataError('Переданы некорректные данные');
-  }
+  const owner = req.user?._id;
+  let _id;
   Card.create({
-    name, link, date, likes, owner,
+    name,
+    link,
+    owner,
   })
-    .then((card) => res.send(card))
+    .then((createdCard) => {
+      _id = createdCard._id;
+      Card.findById(_id)
+        .populate(['owner', 'likes'])
+        .then((card) => res.status(SERVER_CODE_CREATE_OK).send(card));
+    })
     .catch(next);
 };
 
@@ -59,9 +59,10 @@ export const likeCard = (
   const _id = req.params.cardId;
   Card.findByIdAndUpdate(
     _id,
-    { $addToSet: { likes: _id } },
-    { new: true, runValidators: true },
+    { $addToSet: { likes: req.user?._id } },
+    { new: true },
   )
+    .populate(['owner', 'likes'])
     .then((card) => {
       if (!card) {
         throw new NotFoundError('Карточка не найдена');
@@ -76,12 +77,13 @@ export const dislikeCard = (
   res: Response,
   next: NextFunction,
 ) => {
-  const _id: mongoose.Schema.Types.ObjectId = new ObjectId(req.params.cardId);
+  const _id = req.params.cardId;
   Card.findByIdAndUpdate(
     _id,
-    { $pull: { likes: _id } },
-    { new: true, runValidators: true },
+    { $pull: { likes: req.user?._id } },
+    { new: true },
   )
+    .populate(['owner', 'likes'])
     .then((card) => {
       if (!card) {
         throw new NotFoundError('Карточка не найдена');

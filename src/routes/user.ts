@@ -7,16 +7,16 @@ import {
   updateAbout,
 } from '../controllers/user';
 
-const router = Router();
+const userRouter = Router();
 
-router.get('/users', getUsers);
+userRouter.get('/', getUsers);
 
-router.post('/users', createUser);
+userRouter.post('/', createUser);
 
-router.get('/users/:userId', getUser);
+userRouter.get('/:userId', getUser);
 
-router.patch('/users/me/avatar', updateAvatar);
+userRouter.patch('/me/avatar', updateAvatar);
 
-router.patch('/users/me', updateAbout);
+userRouter.patch('/me', updateAbout);
 
-export default router;
+export default userRouter;

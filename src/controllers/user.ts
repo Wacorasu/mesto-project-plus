@@ -1,7 +1,8 @@
 import { NextFunction, Response } from 'express';
 import { CustomRequest } from '../services/types';
 import User from '../models/user';
-import { NotFoundError, DataError } from '../services/utils';
+import NotFoundError from '../services/utils';
+import { SERVER_CODE_CREATE_OK } from '../services/constants';
 
 export const getUsers = (
   req: CustomRequest,
@@ -17,11 +18,8 @@ export const createUser = (
   next: NextFunction,
 ) => {
   const { name, about, avatar } = req.body;
-  if (!name || !about || !avatar) {
-    throw new DataError('Переданы некорректные данные');
-  }
   User.create({ name, about, avatar })
-    .then((user) => res.send(user))
+    .then((user) => res.status(SERVER_CODE_CREATE_OK).send(user))
     .catch(next);
 };
 
@@ -38,7 +36,7 @@ export const getUser = (
       }
       res.send(user);
     })
-    .catch((err) => next(err));
+    .catch(next);
 };
 
 export const updateAvatar = (
@@ -47,18 +45,8 @@ export const updateAvatar = (
   next: NextFunction,
 ) => {
   const { avatar } = req.body;
-  if (!avatar) {
-    throw new DataError('Переданы некорректные данные');
-  }
-  let _id;
-  if (req.user) {
-    _id = req.user._id;
-  }
-  User.findByIdAndUpdate(
-    _id,
-    { avatar },
-    { new: true, runValidators: true },
-  )
+  const _id = req.user?._id;
+  User.findByIdAndUpdate(_id, { avatar }, { new: true, runValidators: true })
     .then((user) => {
       if (!user) {
         throw new NotFoundError('Пользователь не найден');
@@ -74,18 +62,8 @@ export const updateAbout = (
   next: NextFunction,
 ) => {
   const { about } = req.body;
-  if (!about) {
-    throw new DataError('Переданы некорректные данные');
-  }
-  let _id;
-  if (req.user) {
-    _id = req.user._id;
-  }
-  User.findByIdAndUpdate(
-    _id,
-    { about },
-    { new: true, runValidators: true },
-  )
+  const _id = req.user?._id;
+  User.findByIdAndUpdate(_id, { about }, { new: true, runValidators: true })
     .then((user) => {
       if (!user) {
         throw new NotFoundError('Пользователь не найден');
