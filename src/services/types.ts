@@ -1,5 +1,5 @@
-import { Request } from "express";
-import { Error } from "mongoose";
+import { Request } from 'express';
+import { Error } from 'mongoose';
 
 export interface CustomRequest extends Request {
   user?: {

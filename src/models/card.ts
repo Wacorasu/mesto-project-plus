@@ -1,10 +1,10 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 interface ICard {
   name: string;
   link: string;
-  owner: string;
-  likes: string[];
+  owner: mongoose.Schema.Types.ObjectId;
+  likes: mongoose.Schema.Types.ObjectId[];
   createdAt: Date;
 }
 
@@ -19,17 +19,20 @@ const cardSchema = new mongoose.Schema<ICard>({
     type: String,
     required: true,
   },
-  owner: { type: String, required: true },
-  likes: [{ type: String }],
+  owner: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true },
+  likes: {
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'user' }],
+    default: [],
+  },
   createdAt: {
     type: Date,
   },
 });
 
-cardSchema.path("link").validate((val: string) => {
-  const urlRegex =
-    /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/;
+cardSchema.path('link').validate((val: string) => {
+  /* eslint-disable-next-line */
+  const urlRegex = /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/;
   return urlRegex.test(val);
-}, "Invalid URL.");
+}, 'Invalid URL.');
 
-export default mongoose.model("card", cardSchema);
+export default mongoose.model('card', cardSchema);

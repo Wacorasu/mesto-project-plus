@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 export interface IUser {
   name: string;
@@ -25,10 +25,10 @@ export const userSchema = new mongoose.Schema<IUser>({
   },
 });
 
-userSchema.path("avatar").validate((val: string) => {
-  const urlRegex =
-    /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/;
+userSchema.path('avatar').validate((val: string) => {
+  /* eslint-disable-next-line */
+  const urlRegex = /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/;
   return urlRegex.test(val);
-}, "Invalid URL.");
+}, 'Invalid URL.');
 
-export default mongoose.model("user", userSchema);
+export default mongoose.model('user', userSchema);
