@@ -2,6 +2,8 @@ import { CustomRequest } from "../services/types";
 import { NextFunction, Response } from "express";
 import Card from "../models/card";
 import { NotFoundError, DataError } from "../services/utils";
+import { ObjectId } from 'mongodb';
+
 
 export const getCards = (
   req: CustomRequest,
@@ -9,6 +11,7 @@ export const getCards = (
   next: NextFunction
 ) => {
   return Card.find({})
+    .populate(['owner', 'likes'])
     .then((card) => res.send(card))
     .catch(next);
 };
@@ -23,7 +26,7 @@ export const createCard = (
   const likes: string[] = [];
   let owner;
   if (req.user) {
-    owner = req.user._id;
+    owner = new ObjectId(req.user._id);
   }
   if (!name || !link) {
     throw new DataError("Переданы некорректные данные");
@@ -55,14 +58,13 @@ export const likeCard = (
   next: NextFunction
 ) => {
   const _id = req.params.cardId;
-  console.log(_id);
   Card.findByIdAndUpdate(
     _id,
-    { $addToSet: { likes: _id } },
+    { $addToSet: { likes: new ObjectId(_id) } },
     { new: true, runValidators: true }
   )
+    .populate(['owner', "likes"])
     .then((card) => {
-      console.log("lol");
       if (!card) {
         throw new NotFoundError("Карточка не найдена");
       }
@@ -79,9 +81,10 @@ export const dislikeCard = (
   const _id = req.params.cardId;
   Card.findByIdAndUpdate(
     _id,
-    { $pull: { likes: _id } },
+    { $pull: { likes: req.user?._id } },
     { new: true, runValidators: true }
   )
+    .populate(['owner', "likes"])
     .then((card) => {
       if (!card) {
         throw new NotFoundError("Карточка не найдена");

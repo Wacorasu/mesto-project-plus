@@ -1,16 +1,26 @@
 import { CustomRequest } from "../services/types";
 import { NextFunction, Response } from "express";
 import User from "../models/user";
-import { NotFoundError, DataError } from "../services/utils";
+import { NotFoundError, DataError, LoginError } from "../services/utils";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
+import { ObjectId } from "mongodb";
 
-export const getUsers = (
+export const getCurrentUsers = (
   req: CustomRequest,
   res: Response,
   next: NextFunction
 ) => {
-  return User.find({})
-    .then((user) => res.send(user))
-    .catch(next);
+  const _id = req.user;
+  return User.findOne({ _id: _id })
+    .then((user) => {
+      if (!user) {
+        throw new NotFoundError("Пользователь не найден");
+      }
+      res.send(user);
+    })
+    .catch((err) => next(err));
 };
 
 export const createUser = (
@@ -18,12 +28,72 @@ export const createUser = (
   res: Response,
   next: NextFunction
 ) => {
-  const { name, about, avatar } = req.body;
-  if (!name || !about || !avatar) {
+  const { name, about, avatar, password, email } = req.body;
+  if (!password || !email) {
     throw new DataError("Переданы некорректные данные");
   }
-  User.create({ name, about, avatar })
-    .then((user) => res.send(user))
+  return User.findOne({ email })
+    .then((user) => {
+      if (user) {
+        throw new DataError("Пользователь существует");
+      }
+    })
+    .then(() => {
+      bcrypt
+        .hash(password, 10)
+        .then((hash: string) =>
+          User.create({
+            email,
+            password: hash,
+            name,
+            about,
+            avatar,
+          })
+        )
+        .then((user) => {
+          const { _id, email, name, about, avatar } = user;
+          res.status(201).send({
+            _id,
+            email,
+            name,
+            about,
+            avatar,
+          });
+        });
+    })
+    .catch(next);
+};
+
+export const login = (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const { password, email } = req.body;
+  if (!password || !email) {
+    throw new LoginError("Переданы некорректные данные");
+  }
+  let _id: ObjectId;
+  return User.findOne({ email })
+    .then((user) => {
+      return User.findOne({ email }).then((user) => {
+        if (!user) {
+          throw new LoginError("Неправильные почта или пароль");
+        }
+        _id = new ObjectId(user._id);
+        return bcrypt.compare(password, user.password);
+      });
+    })
+    .then((matched) => {
+      if (!matched) {
+        throw new LoginError("Неправильные почта или пароль");
+      }
+      res.send({
+        token: jwt.sign({ _id: _id }, "super-strong-secret", {
+          expiresIn: "7d",
+        }),
+      });
+    })
     .catch(next);
 };
 

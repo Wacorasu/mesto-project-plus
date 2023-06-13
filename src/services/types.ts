@@ -1,9 +1,9 @@
 import { Request } from "express";
-import { Error } from "mongoose";
+import  { Error, ObjectId } from "mongoose";
 
 export interface CustomRequest extends Request {
   user?: {
-    _id: string;
+    _id:  string;
   };
 }
 
