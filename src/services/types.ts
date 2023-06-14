@@ -7,7 +7,6 @@ export interface CustomRequest extends Request {
   };
 }
 
-export interface CustomError extends Error {
-  statusCode?: number;
+export interface CustomErrorType extends Error {
   type?:string;
 }

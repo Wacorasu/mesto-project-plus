@@ -1,7 +1,7 @@
 import { NextFunction, Response } from 'express';
 import { CustomRequest } from '../services/types';
 import Card from '../models/card';
-import NotFoundError from '../services/utils';
+import CustomError from '../services/utils';
 import { SERVER_CODE_CREATE_OK } from '../services/constants';
 
 export const getCards = (
@@ -28,7 +28,7 @@ export const createCard = (
   })
     .then((createdCard) => {
       _id = createdCard._id;
-      Card.findById(_id)
+      return Card.findById(_id)
         .populate(['owner', 'likes'])
         .then((card) => res.status(SERVER_CODE_CREATE_OK).send(card));
     })
@@ -41,14 +41,21 @@ export const deleteCard = (
   next: NextFunction,
 ) => {
   const _id = req.params.cardId;
-  return Card.findByIdAndRemove(_id)
+  Card.findById(_id)
     .then((card) => {
       if (!card) {
-        throw new NotFoundError('Карточка не найдена');
+        throw new CustomError('Карточка не найдена', 'dataError');
       }
-      res.send(card);
+      if (`${card.owner}` !== req.user?._id) {
+        throw new CustomError('Нет прав', 'ErrorAccess');
+      }
+      return Card.findByIdAndRemove(_id)
+        .populate(['owner', 'likes'])
+        .then((removedCard) => {
+          res.send(removedCard);
+        });
     })
-    .catch((err) => next(err));
+    .catch(next);
 };
 
 export const likeCard = (
@@ -65,7 +72,7 @@ export const likeCard = (
     .populate(['owner', 'likes'])
     .then((card) => {
       if (!card) {
-        throw new NotFoundError('Карточка не найдена');
+        throw new CustomError('Карточка не найдена', 'dataError');
       }
       res.send(card);
     })
@@ -86,7 +93,7 @@ export const dislikeCard = (
     .populate(['owner', 'likes'])
     .then((card) => {
       if (!card) {
-        throw new NotFoundError('Карточка не найдена');
+        throw new CustomError('Карточка не найдена', 'dataError');
       }
       res.send(card);
     })
