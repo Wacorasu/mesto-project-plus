@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import validator from 'validator';
+import { REGEX } from '../services/constants';
 
 export interface IUser {
   name: string;
@@ -24,11 +25,13 @@ export const userSchema = new mongoose.Schema<IUser>({
   },
   avatar: {
     type: String,
-    default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
+    default:
+      'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
   },
   email: {
     type: String,
     required: true,
+    unique: true,
   },
   password: {
     type: String,
@@ -37,12 +40,10 @@ export const userSchema = new mongoose.Schema<IUser>({
   },
 });
 
-userSchema.path('avatar').validate((val: string) => {
-  /* eslint-disable-next-line */
-  const urlRegex = /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/;
-  return urlRegex.test(val);
-}, 'Invalid URL.');
+userSchema.path('avatar').validate((val: string) => REGEX.test(val), 'Invalid URL.');
 
-userSchema.path('email').validate((val: string) => validator.isEmail(val), 'Invalid Email.');
+userSchema
+  .path('email')
+  .validate((val: string) => validator.isEmail(val), 'Invalid Email.');
 
 export default mongoose.model('user', userSchema);

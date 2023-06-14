@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { REGEX } from '../services/constants';
 
 interface ICard {
   name: string;
@@ -30,10 +31,6 @@ const cardSchema = new mongoose.Schema<ICard>({
   },
 });
 
-cardSchema.path('link').validate((val: string) => {
-  /* eslint-disable-next-line */
-  const urlRegex = /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/;
-  return urlRegex.test(val);
-}, 'Invalid URL.');
+cardSchema.path('link').validate((val: string) => REGEX.test(val), 'Invalid URL.');
 
 export default mongoose.model('card', cardSchema);

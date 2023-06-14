@@ -4,12 +4,14 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { CustomRequest } from '../services/types';
 import User from '../models/user';
-import CustomError from '../services/utils';
 import {
   SERVER_CODE_CREATE_OK,
   TOKEN_CODE,
   TOKEN_LIFETIME,
 } from '../services/constants';
+import NotFoundError from '../services/error-classes/not-found-error';
+import AuthorizationError from '../services/error-classes/authorization-error';
+import RegisterError from '../services/error-classes/register-error';
 
 export const getCurrentUsers = (
   req: CustomRequest,
@@ -20,11 +22,16 @@ export const getCurrentUsers = (
   return User.findOne({ _id })
     .then((user) => {
       if (!user) {
-        throw new CustomError('Пользователь не найден', 'dataError');
+        throw new NotFoundError('Пользователь не найден');
       }
       res.send(user);
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new NotFoundError('Пользователь не найден'));
+      }
+      next(err);
+    });
 };
 
 export const createUser = (
@@ -35,26 +42,37 @@ export const createUser = (
   const {
     name, about, avatar, password, email,
   } = req.body;
-  return User.findOne({ email })
-    .then((user) => {
-      if (user) {
-        throw new CustomError(
-          'Пользователь c таким email существует',
-          'RegisterError',
-        );
+  return bcrypt
+    .hash(password, 10)
+    .then((hash: string) => User.create({
+      email,
+      password: hash,
+      name,
+      about,
+      avatar,
+    }))
+
+    .then((user) => res.status(SERVER_CODE_CREATE_OK).send({
+      name: user.name,
+      about: user.about,
+      avatar: user.avatar,
+      email: user.email,
+    }))
+    .catch((err) => {
+      if (err && err.message.startsWith('E11000')) {
+        next(new RegisterError('Пользователь уже существует'));
       }
-    })
-    .then(() => bcrypt
-      .hash(password, 10)
-      .then((hash: string) => User.create({
-        email,
-        password: hash,
-        name,
-        about,
-        avatar,
-      }))
-      .then((user) => res.status(SERVER_CODE_CREATE_OK).send(user)))
-    .catch(next);
+      if (err.name === 'CastError') {
+        next(new NotFoundError('Пользователь не найден'));
+      }
+      if (err.name === 'CastError') {
+        next(new NotFoundError('Пользователь не найден'));
+      }
+      if (err.name === 'ValidationError') {
+        next(new NotFoundError('Данные не верны'));
+      }
+      next(err);
+    });
 };
 
 export const login = (
@@ -68,14 +86,14 @@ export const login = (
     .select('+password')
     .then((user) => {
       if (!user) {
-        throw new CustomError('Неправильные почта или пароль', 'AuthorizationError');
+        throw new AuthorizationError('Неправильные почта или пароль');
       }
       _id = user._id;
       return bcrypt.compare(password, user.password);
     })
     .then((matched) => {
       if (!matched) {
-        throw new CustomError('Неправильные почта или пароль', 'AuthorizationError');
+        throw new AuthorizationError('Неправильные почта или пароль');
       }
       res.send({
         token: jwt.sign({ _id }, TOKEN_CODE, {
@@ -83,7 +101,15 @@ export const login = (
         }),
       });
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new NotFoundError('Пользователь не найден'));
+      }
+      if (err.name === 'ValidationError') {
+        next(new NotFoundError('Данные не верны'));
+      }
+      next(err);
+    });
 };
 
 export const getUser = (
@@ -95,11 +121,16 @@ export const getUser = (
   return User.findOne({ _id })
     .then((user) => {
       if (!user) {
-        throw new CustomError('Пользователь не найден', 'dataError');
+        throw new NotFoundError('Пользователь не найден');
       }
       res.send(user);
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new NotFoundError('Пользователь не найден'));
+      }
+      next(err);
+    });
 };
 
 export const updateAvatar = (
@@ -112,11 +143,16 @@ export const updateAvatar = (
   User.findByIdAndUpdate(_id, { avatar }, { new: true, runValidators: true })
     .then((user) => {
       if (!user) {
-        throw new CustomError('Пользователь не найден', 'dataError');
+        throw new NotFoundError('Пользователь не найден');
       }
       res.send(user);
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new NotFoundError('Пользователь не найден'));
+      }
+      next(err);
+    });
 };
 
 export const updateAbout = (
@@ -129,9 +165,14 @@ export const updateAbout = (
   User.findByIdAndUpdate(_id, { about }, { new: true, runValidators: true })
     .then((user) => {
       if (!user) {
-        throw new CustomError('Пользователь не найден', 'dataError');
+        throw new NotFoundError('Пользователь не найден');
       }
       res.send(user);
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new NotFoundError('Пользователь не найден'));
+      }
+      next(err);
+    });
 };

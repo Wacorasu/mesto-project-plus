@@ -8,3 +8,5 @@ export const ERROR_CODE_ACCESS: number = 403;
 export const ERROR_CODE_REGISTER: number = 409;
 export const TOKEN_LIFETIME: string = '7d';
 export const TOKEN_CODE: string = 'super-strong-secret';
+/* eslint-disable-next-line */
+export const REGEX: RegExp = /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/;
