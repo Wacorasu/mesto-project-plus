@@ -8,5 +8,5 @@ export interface CustomRequest extends Request {
 }
 
 export interface CustomErrorType extends Error {
-  type?:string;
+  statusCode?: number;
 }

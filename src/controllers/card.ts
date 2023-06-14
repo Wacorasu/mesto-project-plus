@@ -1,8 +1,9 @@
 import { NextFunction, Response } from 'express';
 import { CustomRequest } from '../services/types';
 import Card from '../models/card';
-import CustomError from '../services/utils';
 import { SERVER_CODE_CREATE_OK } from '../services/constants';
+import NotFoundError from '../services/error-classes/not-found-error';
+import AccessError from '../services/error-classes/access-error';
 
 export const getCards = (
   req: CustomRequest,
@@ -11,7 +12,12 @@ export const getCards = (
 ) => Card.find({})
   .populate(['owner', 'likes'])
   .then((card) => res.send(card))
-  .catch(next);
+  .catch((err) => {
+    if (err.name === 'CastError') {
+      next(new NotFoundError('Карточка не найдена'));
+    }
+    next(err);
+  });
 
 export const createCard = (
   req: CustomRequest,
@@ -32,7 +38,15 @@ export const createCard = (
         .populate(['owner', 'likes'])
         .then((card) => res.status(SERVER_CODE_CREATE_OK).send(card));
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new NotFoundError('Карточка не найдена'));
+      }
+      if (err.name === 'ValidationError') {
+        next(new NotFoundError('Данные не верны'));
+      }
+      next(err);
+    });
 };
 
 export const deleteCard = (
@@ -44,10 +58,10 @@ export const deleteCard = (
   Card.findById(_id)
     .then((card) => {
       if (!card) {
-        throw new CustomError('Карточка не найдена', 'dataError');
+        throw new NotFoundError('Карточка не найдена');
       }
       if (`${card.owner}` !== req.user?._id) {
-        throw new CustomError('Нет прав', 'ErrorAccess');
+        throw new AccessError('Нет прав');
       }
       return Card.findByIdAndRemove(_id)
         .populate(['owner', 'likes'])
@@ -55,7 +69,12 @@ export const deleteCard = (
           res.send(removedCard);
         });
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new NotFoundError('Карточка не найдена'));
+      }
+      next(err);
+    });
 };
 
 export const likeCard = (
@@ -72,11 +91,16 @@ export const likeCard = (
     .populate(['owner', 'likes'])
     .then((card) => {
       if (!card) {
-        throw new CustomError('Карточка не найдена', 'dataError');
+        throw new NotFoundError('Карточка не найдена');
       }
       res.send(card);
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new NotFoundError('Карточка не найдена'));
+      }
+      next(err);
+    });
 };
 
 export const dislikeCard = (
@@ -93,9 +117,14 @@ export const dislikeCard = (
     .populate(['owner', 'likes'])
     .then((card) => {
       if (!card) {
-        throw new CustomError('Карточка не найдена', 'dataError');
+        throw new NotFoundError('Карточка не найдена');
       }
       res.send(card);
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new NotFoundError('Карточка не найдена'));
+      }
+      next(err);
+    });
 };

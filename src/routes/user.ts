@@ -9,55 +9,20 @@ import {
 
 const userRouter = Router();
 
-userRouter.get(
-  '/me',
-  celebrate({
-    headers: Joi.object()
-      .keys({
-        authorization: Joi.string().required(),
-      })
-      .unknown(true),
-  }),
-  getCurrentUsers,
-);
+userRouter.get('/me', getCurrentUsers);
 
 userRouter.get(
   '/:userId',
   celebrate({
     params: Joi.object().keys({
-      userId: Joi.string().alphanum(),
+      userId: Joi.string().length(24).hex().required(),
     }),
-    headers: Joi.object()
-      .keys({
-        authorization: Joi.string().required(),
-      })
-      .unknown(true),
   }),
   getUser,
 );
 
-userRouter.patch(
-  '/me/avatar',
-  celebrate({
-    headers: Joi.object()
-      .keys({
-        authorization: Joi.string().required(),
-      })
-      .unknown(true),
-  }),
-  updateAvatar,
-);
+userRouter.patch('/me/avatar', updateAvatar);
 
-userRouter.patch(
-  '/me',
-  celebrate({
-    headers: Joi.object()
-      .keys({
-        authorization: Joi.string().required(),
-      })
-      .unknown(true),
-  }),
-  updateAbout,
-);
+userRouter.patch('/me', updateAbout);
 
 export default userRouter;
