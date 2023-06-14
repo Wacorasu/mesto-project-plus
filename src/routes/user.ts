@@ -1,7 +1,7 @@
 import { Router } from 'express';
+import { celebrate, Joi } from 'celebrate';
 import {
-  getUsers,
-  createUser,
+  getCurrentUsers,
   getUser,
   updateAvatar,
   updateAbout,
@@ -9,14 +9,55 @@ import {
 
 const userRouter = Router();
 
-userRouter.get('/', getUsers);
+userRouter.get(
+  '/me',
+  celebrate({
+    headers: Joi.object()
+      .keys({
+        authorization: Joi.string().required(),
+      })
+      .unknown(true),
+  }),
+  getCurrentUsers,
+);
 
-userRouter.post('/', createUser);
+userRouter.get(
+  '/:userId',
+  celebrate({
+    params: Joi.object().keys({
+      userId: Joi.string().alphanum(),
+    }),
+    headers: Joi.object()
+      .keys({
+        authorization: Joi.string().required(),
+      })
+      .unknown(true),
+  }),
+  getUser,
+);
 
-userRouter.get('/:userId', getUser);
+userRouter.patch(
+  '/me/avatar',
+  celebrate({
+    headers: Joi.object()
+      .keys({
+        authorization: Joi.string().required(),
+      })
+      .unknown(true),
+  }),
+  updateAvatar,
+);
 
-userRouter.patch('/me/avatar', updateAvatar);
-
-userRouter.patch('/me', updateAbout);
+userRouter.patch(
+  '/me',
+  celebrate({
+    headers: Joi.object()
+      .keys({
+        authorization: Joi.string().required(),
+      })
+      .unknown(true),
+  }),
+  updateAbout,
+);
 
 export default userRouter;
