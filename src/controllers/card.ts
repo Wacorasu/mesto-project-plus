@@ -4,6 +4,7 @@ import Card from '../models/card';
 import { SERVER_CODE_CREATE_OK } from '../services/constants';
 import NotFoundError from '../services/error-classes/not-found-error';
 import AccessError from '../services/error-classes/access-error';
+import RequestError from '../services/error-classes/request-error';
 
 export const getCards = (
   req: CustomRequest,
@@ -12,12 +13,7 @@ export const getCards = (
 ) => Card.find({})
   .populate(['owner', 'likes'])
   .then((card) => res.send(card))
-  .catch((err) => {
-    if (err.name === 'CastError') {
-      next(new NotFoundError('Карточка не найдена'));
-    }
-    next(err);
-  });
+  .catch(next);
 
 export const createCard = (
   req: CustomRequest,
@@ -39,11 +35,8 @@ export const createCard = (
         .then((card) => res.status(SERVER_CODE_CREATE_OK).send(card));
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new NotFoundError('Карточка не найдена'));
-      }
       if (err.name === 'ValidationError') {
-        next(new NotFoundError('Данные не верны'));
+        next(new RequestError('Ошибка в данных запроса'));
       }
       next(err);
     });
@@ -71,7 +64,7 @@ export const deleteCard = (
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new NotFoundError('Карточка не найдена'));
+        next(new RequestError('Ошибка в данных запроса'));
       }
       next(err);
     });
@@ -97,7 +90,7 @@ export const likeCard = (
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new NotFoundError('Карточка не найдена'));
+        next(new RequestError('Ошибка в данных запроса'));
       }
       next(err);
     });
@@ -123,7 +116,7 @@ export const dislikeCard = (
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new NotFoundError('Карточка не найдена'));
+        next(new RequestError('Ошибка в данных запроса'));
       }
       next(err);
     });
