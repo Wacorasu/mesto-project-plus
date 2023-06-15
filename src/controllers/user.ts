@@ -12,6 +12,7 @@ import {
 import NotFoundError from '../services/error-classes/not-found-error';
 import AuthorizationError from '../services/error-classes/authorization-error';
 import RegisterError from '../services/error-classes/register-error';
+import RequestError from '../services/error-classes/request-error';
 
 export const getCurrentUsers = (
   req: CustomRequest,
@@ -28,7 +29,7 @@ export const getCurrentUsers = (
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new NotFoundError('Пользователь не найден'));
+        next(new RequestError('Ошибка в данных запроса'));
       }
       next(err);
     });
@@ -62,14 +63,8 @@ export const createUser = (
       if (err && err.message.startsWith('E11000')) {
         next(new RegisterError('Пользователь уже существует'));
       }
-      if (err.name === 'CastError') {
-        next(new NotFoundError('Пользователь не найден'));
-      }
-      if (err.name === 'CastError') {
-        next(new NotFoundError('Пользователь не найден'));
-      }
       if (err.name === 'ValidationError') {
-        next(new NotFoundError('Данные не верны'));
+        next(new RequestError('Ошибка в данных запроса'));
       }
       next(err);
     });
@@ -101,15 +96,7 @@ export const login = (
         }),
       });
     })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new NotFoundError('Пользователь не найден'));
-      }
-      if (err.name === 'ValidationError') {
-        next(new NotFoundError('Данные не верны'));
-      }
-      next(err);
-    });
+    .catch(next);
 };
 
 export const getUser = (
@@ -127,7 +114,7 @@ export const getUser = (
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new NotFoundError('Пользователь не найден'));
+        next(new RequestError('Ошибка в данных запроса'));
       }
       next(err);
     });
@@ -148,8 +135,8 @@ export const updateAvatar = (
       res.send(user);
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new NotFoundError('Пользователь не найден'));
+      if (err.name === 'ValidationError') {
+        next(new RequestError('Ошибка в данных запроса'));
       }
       next(err);
     });
@@ -160,9 +147,13 @@ export const updateAbout = (
   res: Response,
   next: NextFunction,
 ) => {
-  const { about } = req.body;
+  const { name, about } = req.body;
   const _id = req.user?._id;
-  User.findByIdAndUpdate(_id, { about }, { new: true, runValidators: true })
+  User.findByIdAndUpdate(
+    _id,
+    { name, about },
+    { new: true, runValidators: true },
+  )
     .then((user) => {
       if (!user) {
         throw new NotFoundError('Пользователь не найден');
@@ -170,8 +161,8 @@ export const updateAbout = (
       res.send(user);
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new NotFoundError('Пользователь не найден'));
+      if (err.name === 'ValidationError') {
+        next(new RequestError('Ошибка в данных запроса'));
       }
       next(err);
     });

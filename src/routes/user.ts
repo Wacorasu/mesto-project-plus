@@ -6,6 +6,7 @@ import {
   updateAvatar,
   updateAbout,
 } from '../controllers/user';
+import { REGEX } from '../services/constants';
 
 const userRouter = Router();
 
@@ -21,8 +22,26 @@ userRouter.get(
   getUser,
 );
 
-userRouter.patch('/me/avatar', updateAvatar);
+userRouter.patch(
+  '/me/avatar',
+  celebrate({
+    body: Joi.object().keys({
+      avatar: Joi.string().pattern(REGEX).required(),
+    }),
+  }),
+  updateAvatar,
+);
 
-userRouter.patch('/me', updateAbout);
+userRouter.patch(
+  '/me',
+  celebrate({
+    body: Joi.object().keys({
+      name: Joi.string().alphanum().required().min(2)
+        .max(30),
+      about: Joi.string().required().min(2).max(200),
+    }),
+  }),
+  updateAbout,
+);
 
 export default userRouter;
